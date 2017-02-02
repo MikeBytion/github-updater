@@ -42,8 +42,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 	 */
 	public function __construct( $type ) {
 		$this->type     = $type;
-		parent::$hours  = 12;
-		$this->response = $this->get_transient();
+		$this->response = $this->get_repo_cache();
 
 		$this->load_hooks();
 
@@ -96,7 +95,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 			if ( $response ) {
 				$contents = $this->_recombine_response( $response );
 				$response = $this->get_file_headers( $contents, $this->type->type );
-				$this->set_transient( $file, $response );
+				$this->set_repo_cache( $file, $response );
 			}
 		}
 
@@ -116,7 +115,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 	 * into one string with \n line endings.
 	 * Code relying on raw text can now parse it.
 	 *
-	 * @param array $response
+	 * @param object $response
 	 *
 	 * @return string combined lines of text returned by API
 	 */
@@ -153,7 +152,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 
 			if ( $response ) {
 				$response = $this->parse_tag_response( $response );
-				$this->set_transient( 'tags', $response );
+				$this->set_repo_cache( 'tags', $response );
 			}
 		}
 
@@ -184,7 +183,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 			$content  = $this->get_local_info( $this->type, $changes );
 			if ( $content ) {
 				$response->data = $content;
-				$this->set_transient( 'changes', $response );
+				$this->set_repo_cache( 'changes', $response );
 			} else {
 				$response = false;
 			}
@@ -207,7 +206,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 			if ( $response ) {
 				$response = wp_remote_retrieve_body( $response );
 				$response = $this->parse_changelog_response( $response );
-				$this->set_transient( 'changes', $response );
+				$this->set_repo_cache( 'changes', $response );
 			}
 		}
 
@@ -266,7 +265,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 				$file     = $response->data;
 				$parser   = new Readme_Parser( $file );
 				$response = $parser->parse_data();
-				$this->set_transient( 'readme', $response );
+				$this->set_repo_cache( 'readme', $response );
 			}
 		}
 
@@ -328,7 +327,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 
 			if ( $response ) {
 				$response = $this->parse_meta_response( $response );
-				$this->set_transient( 'meta', $response );
+				$this->set_repo_cache( 'meta', $response );
 			}
 		}
 
@@ -362,7 +361,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 					$branches[ $branch ] = $this->construct_download_link( false, $branch );
 				}
 				$this->type->branches = $branches;
-				$this->set_transient( 'branches', $branches );
+				$this->set_repo_cache( 'branches', $branches );
 
 				return true;
 			}
@@ -458,7 +457,7 @@ class Bitbucket_Server_API extends Bitbucket_API {
 					$response->{$locale->language}->version = $this->type->remote_version;
 				}
 
-				$this->set_transient( 'languages', $response );
+				$this->set_repo_cache( 'languages', $response );
 			}
 		}
 		$this->type->language_packs = $response;
