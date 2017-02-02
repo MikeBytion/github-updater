@@ -116,12 +116,13 @@ class Base {
 	 * @var bool
 	 */
 	protected static $auth_required = array(
-		'github_private'    => false,
-		'github_enterprise' => false,
-		'bitbucket_private' => false,
-		'bitbucket_enterprise' => false,		'gitlab'            => false,
-		'gitlab_private'    => false,
-		'gitlab_enterprise' => false,
+		'github_private'       => false,
+		'github_enterprise'    => false,
+		'bitbucket_private'    => false,
+		'bitbucket_enterprise' => false,
+		'gitlab'               => false,
+		'gitlab_private'       => false,
+		'gitlab_enterprise'    => false,
 	);
 
 	/**
@@ -194,7 +195,7 @@ class Base {
 		remove_filter( 'http_request_args', array( 'Fragen\\GitHub_Updater\\API', 'http_request_args' ) );
 		remove_filter( 'http_response', array( 'Fragen\\GitHub_Updater\\API', 'wp_update_response' ) );
 
-		if ( $this->repo_api instanceof Bitbucket_API ) {
+		if ( $this->repo_api instanceof Bitbucket_API || $this->repo_api instanceof Bitbucket_Server_API ) {
 			$this->repo_api->remove_hooks();
 		}
 	}
