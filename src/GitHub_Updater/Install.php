@@ -126,8 +126,13 @@ class Install extends Base {
 					$base = $headers['base_uri'] . '/api/v3';
 				}
 
-				self::$install['download_link'] = $base . '/repos/' . self::$install['github_updater_repo'] . '/zipball/' . self::$install['github_updater_branch'];
-
+				self::$install['download_link'] = implode( '/', array(
+					$base,
+					'repos',
+					self::$install['github_updater_repo'],
+					'zipball',
+					self::$install['github_updater_branch'],
+				) );
 				/*
 				 * If asset is entered install it.
 				 */
@@ -164,7 +169,12 @@ class Install extends Base {
 					$base = $headers['base_uri'];
 				}
 
-				self::$install['download_link'] = $base . self::$install['github_updater_repo'] . '/get/' . self::$install['github_updater_branch'] . '.zip';
+				self::$install['download_link'] = implode( '/', array(
+					$base,
+					self::$install['github_updater_repo'],
+					'get',
+					self::$install['github_updater_branch'] . '.zip',
+				) );
 				if ( isset( self::$install['is_private'] ) ) {
 					parent::$options[ self::$install['repo'] ] = 1;
 				}
@@ -199,7 +209,7 @@ class Install extends Base {
 				self::$install['download_link'] = add_query_arg( 'ref', self::$install['github_updater_branch'], self::$install['download_link'] );
 
 				/*
-				 * Add access token.
+				 * Add access token if present.
 				 */
 				if ( ! empty( self::$install['gitlab_access_token'] ) ) {
 					self::$install['download_link']            = add_query_arg( 'private_token', self::$install['gitlab_access_token'], self::$install['download_link'] );
@@ -267,11 +277,9 @@ class Install extends Base {
 			}
 
 			/*
-			 * Perform the action and install the plugin from the $source urldecode().
-			 * Flush cache so we can make sure that the installed plugins/themes list is always up to date.
+			 * Perform the action and install the repo from the $source urldecode().
 			 */
 			$upgrader->install( $url );
-			wp_cache_flush();
 		}
 
 		if ( $wp_cli ) {
@@ -398,17 +406,13 @@ class Install extends Base {
 			$type
 		);
 
-		if ( empty( parent::$options['gitlab_access_token'] ) ||
-		     empty( parent::$options['gitlab_enterprise_token'] )
-		) {
-			add_settings_field(
-				'gitlab_access_token',
-				esc_html__( 'GitLab Access Token', 'github-updater' ),
-				array( &$this, 'gitlab_access_token' ),
-				'github_updater_install_' . $type,
-				$type
-			);
-		}
+		add_settings_field(
+			'gitlab_access_token',
+			esc_html__( 'GitLab Access Token', 'github-updater' ),
+			array( &$this, 'gitlab_access_token' ),
+			'github_updater_install_' . $type,
+			$type
+		);
 
 	}
 
