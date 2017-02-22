@@ -1447,6 +1447,11 @@ class Base {
 				case 'GitLab':
 					$header['enterprise_api'] = $header['enterprise_uri'] . '/api/v3';
 					break;
+				case 'Bitbucket':
+					$header['enterprise_api'] = $header['enterprise_uri'];
+					break;
+				default:
+					break;
 			}
 		}
 

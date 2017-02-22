@@ -454,14 +454,14 @@ class Settings extends Base {
 				'bitbucket_enterprise_user',
 				esc_html__( 'Bitbucket Enterprise Private Settings', 'github-updater' ),
 				array( &$this, 'print_section_bitbucket_username' ),
-				'github_updater_bitbucket_enterprise_install_settings'
+				'github_updater_bbenterprise_install_settings'
 			);
 
 			add_settings_field(
 				'bitbucket_enterprise_username',
 				esc_html__( 'Bitbucket Enterprise Username', 'github-updater' ),
 				array( &$this, 'token_callback_text' ),
-				'github_updater_bitbucket_enterprise_install_settings',
+				'github_updater_bbenterprise_install_settings',
 				'bitbucket_enterprise_user',
 				array( 'id' => 'bitbucket_enterprise_username' )
 			);
@@ -470,7 +470,7 @@ class Settings extends Base {
 				'bitbucket_enterprise_password',
 				esc_html__( 'Bitbucket Enterprise Password', 'github-updater' ),
 				array( &$this, 'token_callback_text' ),
-				'github_updater_bitbucket_enterprise_install_settings',
+				'github_updater_bbenterprise_install_settings',
 				'bitbucket_enterprise_user',
 				array( 'id' => 'bitbucket_enterprise_password', 'token' => true )
 			);
@@ -598,7 +598,7 @@ class Settings extends Base {
 					$setting_field['callback']        = $token->repo;
 					break;
 				case 'bbenterprise':
-					$setting_field['page']            = 'github_updater_bitbucket_enterprise_install_settings';
+					$setting_field['page']            = 'github_updater_bbenterprise_install_settings';
 					$setting_field['section']         = 'bitbucket_id';
 					$setting_field['callback_method'] = array( &$this, 'token_callback_checkbox' );
 					$setting_field['callback']        = $token->repo;
