@@ -102,11 +102,9 @@ class Base {
 	 * @var array
 	 */
 	protected static $extra_repo_headers = array(
-		'branch'     => 'Branch',
-		'enterprise' => 'Enterprise',
-		'gitlab_ce'  => 'CE',
-		'languages'  => 'Languages',
-		'ci_job'     => 'CI Job',
+		'branch'    => 'Branch',
+		'languages' => 'Languages',
+		'ci_job'    => 'CI Job',
 	);
 
 	/**
@@ -162,7 +160,7 @@ class Base {
 	 * Load relevant action/filter hooks.
 	 * Use 'init' hook for user capabilities.
 	 */
-	public function load_hooks() {
+	protected function load_hooks() {
 		add_action( 'init', array( &$this, 'init' ) );
 		add_action( 'init', array( &$this, 'background_update' ) );
 		add_action( 'init', array( &$this, 'set_options_filter' ) );
@@ -269,7 +267,7 @@ class Base {
 		if ( is_admin() && self::$load_repo_meta &&
 		     ! apply_filters( 'github_updater_hide_settings', false )
 		) {
-			new Settings();
+			Settings::instance();
 		}
 
 		return true;
@@ -323,8 +321,8 @@ class Base {
 	 * for remote management services.
 	 */
 	public function forced_meta_update_remote_management() {
-		$this->forced_meta_update_plugins();
-		$this->forced_meta_update_themes();
+		$this->forced_meta_update_plugins( true );
+		$this->forced_meta_update_themes( true );
 	}
 
 	/**
@@ -1420,6 +1418,63 @@ class Base {
 			}
 			set_site_transient( $transient, $current );
 		}
+	}
+
+	/**
+	 * Parse Enterprise, Languages, and CI Job headers for plugins and themes.
+	 *
+	 * @param array           $header
+	 * @param array|\WP_Theme $headers
+	 * @param array           $header_parts
+	 * @param array           $repo_parts
+	 *
+	 * @return array $header
+	 */
+	protected function parse_extra_headers( $header, $headers, $header_parts, $repo_parts ) {
+		$hosted_domains = array( 'github.com', 'bitbucket.org', 'gitlab.com' );
+		$theme          = null;
+
+		$header['enterprise_uri'] = null;
+		$header['enterprise_api'] = null;
+		$header['languages']      = null;
+		$header['ci_job']         = false;
+
+		if ( ! in_array( $header['host'], $hosted_domains ) && ! empty( $header['host'] ) ) {
+			$header['enterprise_uri'] = $header['base_uri'];
+			$header['enterprise_uri'] = trim( $header['enterprise_uri'], '/' );
+			switch ( $header_parts[0] ) {
+				case 'GitHub':
+				case 'GitLab':
+					$header['enterprise_api'] = $header['enterprise_uri'] . '/api/v3';
+					break;
+			}
+		}
+
+		if ( $headers instanceof \WP_Theme ) {
+			$theme   = $headers;
+			$headers = array();
+		}
+
+		$self_hosted_parts = array_diff( array_keys( self::$extra_repo_headers ), array( 'branch' ) );
+		foreach ( $self_hosted_parts as $part ) {
+			if ( $theme instanceof \WP_Theme ) {
+				$headers[ $repo_parts[ $part ] ] = $theme->get( $repo_parts[ $part ] );
+			}
+			if ( array_key_exists( $repo_parts[ $part ], $headers ) &&
+			     ! empty( $headers[ $repo_parts[ $part ] ] )
+			) {
+				switch ( $part ) {
+					case 'languages':
+						$header['languages'] = $headers[ $repo_parts[ $part ] ];
+						break;
+					case 'ci_job':
+						$header['ci_job'] = $headers[ $repo_parts[ $part ] ];
+						break;
+				}
+			}
+		}
+
+		return $header;
 	}
 
 	/**

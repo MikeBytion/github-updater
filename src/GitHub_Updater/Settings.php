@@ -28,6 +28,13 @@ if ( ! defined( 'WPINC' ) ) {
 class Settings extends Base {
 
 	/**
+	 * Settings object.
+	 *
+	 * @var bool|Settings
+	 */
+	private static $instance = false;
+
+	/**
 	 * Holds the plugin basename.
 	 *
 	 * @var string
@@ -56,9 +63,23 @@ class Settings extends Base {
 	}
 
 	/**
+	 * The Settings object can be created/obtained via this
+	 * method - this prevents potential duplicate loading.
+	 *
+	 * @return object $instance Settings
+	 */
+	public static function instance() {
+		if ( false === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	/**
 	 * Load relevant action/filter hooks.
 	 */
-	public function load_hooks() {
+	protected function load_hooks() {
 		add_action( is_multisite() ? 'network_admin_menu' : 'admin_menu', array( &$this, 'add_plugin_page' ) );
 		add_action( 'network_admin_edit_github-updater', array( &$this, 'update_settings' ) );
 		add_action( 'admin_init', array( &$this, 'page_init' ) );
@@ -93,25 +114,20 @@ class Settings extends Base {
 	 * @return array
 	 */
 	private function settings_sub_tabs() {
-		$subtabs         = array();
-		$gits            = $this->installed_git_repos();
-		$default_subtabs = array(
-			'github_updater' => esc_html__( 'GitHub Updater', 'github-updater' ),
-			'github'         => esc_html__( 'GitHub', 'github-updater' ),
-		);
-		$extra_subtabs   = array(
-			array( 'bitbucket' => esc_html__( 'Bitbucket', 'github-updater' ) ),
-			array( 'bbenterprise' => esc_html__( 'Bitbucket Enterprise', 'github-updater' ) ),
-			array( 'gitlab' => esc_html__( 'GitLab', 'github-updater' ) ),
-		);
+		$subtabs = array( 'github_updater' => esc_html__( 'GitHub Updater', 'github-updater' ) );
+		$gits    = $this->installed_git_repos();
 
-		array_filter( $extra_subtabs, function( $e ) use ( &$subtabs, $gits ) {
-			if ( in_array( key( $e ), $gits ) ) {
-				return $subtabs[ key( $e ) ] = array_shift( $e );
-			}
-		} );
+		$github       = array( 'github' => esc_html__( 'GitHub', 'github-updater' ) );
+		$bitbucket    = array( 'bitbucket' => esc_html__( 'Bitbucket', 'github-updater' ) );
+		$bbenterprise = array( 'bbenterprise' => esc_html__( 'Bitbucket Enterprise', 'github-updater' ) );
+		$gitlab       = array( 'gitlab' => esc_html__( 'GitLab', 'github-updater' ) );
 
-		return array_merge( $default_subtabs, $subtabs );
+		foreach ( $gits as $git ) {
+			$git_subtab = (array) ${$git};
+			$subtabs    = array_merge( $subtabs, $git_subtab );
+		}
+
+		return $subtabs;
 	}
 
 	/**
@@ -228,50 +244,17 @@ class Settings extends Base {
 						<?php
 						settings_fields( 'github_updater' );
 						switch ( $subtab ) {
-							case 'github_updater':
-								do_settings_sections( 'github_updater_install_settings' );
-								echo '<div style="display:none;">';
-								do_settings_sections( 'github_updater_github_install_settings' );
-								do_settings_sections( 'github_updater_bitbucket_install_settings' );
-								do_settings_sections( 'github_updater_gitlab_install_settings' );
-								echo '</div>';
-								break;
 							case 'github':
-								do_settings_sections( 'github_updater_github_install_settings' );
-								$this->display_ghu_repos( 'github' );
-								echo '<div style="display:none;">';
-								do_settings_sections( 'github_updater_install_settings' );
-								do_settings_sections( 'github_updater_bitbucket_install_settings' );
-								do_settings_sections( 'github_updater_gitlab_install_settings' );
-								echo '</div>';
-								break;
 							case 'bitbucket':
-								do_settings_sections( 'github_updater_bitbucket_install_settings' );
-								$this->display_ghu_repos( 'bitbucket' );
-								echo '<div style="display:none;">';
-								do_settings_sections( 'github_updater_install_settings' );
-								do_settings_sections( 'github_updater_github_install_settings' );
-								do_settings_sections( 'github_updater_gitlab_install_settings' );
-								echo '</div>';
-								break;
 							case 'bbenterprise':
-								do_settings_sections( 'github_updater_bitbucket_enterprise_install_settings' );
-								$this->display_ghu_repos( 'bbenterprise' );
-								echo '<div style="display:none;">';
-								do_settings_sections( 'github_updater_install_settings' );
-								do_settings_sections( 'github_updater_github_install_settings' );
-								do_settings_sections( 'github_updater_bitbucket_install_settings' );
-								do_settings_sections( 'github_updater_gitlab_install_settings' );
-								echo '</div>';
-								break;
 							case 'gitlab':
-								do_settings_sections( 'github_updater_gitlab_install_settings' );
-								$this->display_ghu_repos( 'gitlab' );
-								echo '<div style="display:none;">';
+								do_settings_sections( 'github_updater_' . $subtab . '_install_settings' );
+								$this->display_ghu_repos( $subtab );
+								$this->add_hidden_settings_sections( $subtab );
+								break;
+							default:
 								do_settings_sections( 'github_updater_install_settings' );
-								do_settings_sections( 'github_updater_github_install_settings' );
-								do_settings_sections( 'github_updater_bitbucket_install_settings' );
-								echo '</div>';
+								$this->add_hidden_settings_sections();
 								break;
 						}
 						submit_button();
@@ -1013,6 +996,27 @@ class Settings extends Base {
 		$link          = array( '<a href="' . esc_url( network_admin_url( $settings_page ) ) . '?page=github-updater">' . esc_html__( 'Settings', 'github-updater' ) . '</a>' );
 
 		return array_merge( $links, $link );
+	}
+
+	/**
+	 * Create settings sections that are hidden.
+	 * Required to preserve subtab settings during saves.
+	 *
+	 * @param array $subtab Subtab to display
+	 */
+	private function add_hidden_settings_sections( $subtab = array() ) {
+		$subtabs   = array_keys( parent::$git_servers );
+		$hide_tabs = array_diff( $subtabs, (array) $subtab );
+		if ( ! empty( $subtab ) ) {
+			echo '<div class="hide-github-updater-settings">';
+			do_settings_sections( 'github_updater_install_settings' );
+			echo '</div>';
+		}
+		foreach ( $hide_tabs as $hide_tab ) {
+			echo '<div class="hide-github-updater-settings">';
+			do_settings_sections( 'github_updater_' . $hide_tab . '_install_settings' );
+			echo '</div>';
+		}
 	}
 
 	/**
