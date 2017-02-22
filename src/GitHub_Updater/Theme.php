@@ -94,6 +94,7 @@ class Theme extends Base {
 		$git_themes = array();
 		$themes     = wp_get_themes( array( 'errors' => null ) );
 
+
 		/**
 		 * Filter to add themes not containing appropriate header line.
 		 *

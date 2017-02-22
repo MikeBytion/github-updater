@@ -163,6 +163,7 @@ class Base {
 		add_action( 'init', array( &$this, 'init' ) );
 		add_action( 'init', array( &$this, 'background_update' ) );
 		add_action( 'init', array( &$this, 'set_options_filter' ) );
+		add_action( 'init', array( &$this, 'compatibility_options' ), 9999 );
 		add_action( 'wp_ajax_github-updater-update', array( &$this, 'ajax_update' ) );
 		add_action( 'wp_ajax_nopriv_github-updater-update', array( &$this, 'ajax_update' ) );
 
@@ -181,6 +182,20 @@ class Base {
 		add_filter( 'http_response', array( 'Fragen\\GitHub_Updater\\API', 'wp_update_response' ), 10, 3 );
 	}
 
+	/**
+	 * Check for compatibility options and adjust as needed
+	 *
+	 * @author Mike Grotton
+	 * @return void
+	 */
+	public function compatibility_options() {
+
+		// is genesis framework compatibility on?
+		if ( ! empty( self::$options['genesis_compatibility'] ) ) {
+			remove_filter( 'pre_set_site_transient_update_themes', 'genesis_disable_wporg_updates' );
+			remove_filter( 'pre_set_transient_update_themes', 'genesis_disable_wporg_updates' );
+		}
+	}
 	/**
 	 * Remove hooks after use.
 	 */
@@ -391,6 +406,10 @@ class Base {
 	protected function set_defaults( $type ) {
 		if ( ! isset( self::$options['branch_switch'] ) ) {
 			self::$options['branch_switch'] = null;
+		}
+
+		if ( ! isset( self::$options['genesis_compatibility'] ) ) {
+				self::$options['genesis_compatibility'] = null;
 		}
 
 		if ( ! isset( $this->$type->repo ) ) {

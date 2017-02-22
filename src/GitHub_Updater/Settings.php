@@ -331,6 +331,15 @@ class Settings extends Base {
 			array( 'id' => 'branch_switch' )
 		);
 
+		add_settings_field(
+			'genesis_compatibility',
+			esc_html__( 'Genesis Compatibility Mode', 'github-updater' ),
+			array( &$this, 'token_callback_checkbox' ),
+			'github_updater_install_settings',
+			'github_updater_settings',
+			array( 'id' => 'genesis_compatibility' )
+		);
+
 		/*
 		 * Add settings for GitHub Personal Access Token.
 		 */
